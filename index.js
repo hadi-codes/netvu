@@ -1,46 +1,50 @@
 const moment = require('moment')
-const find = require('local-devices');
-const oui = require('oui');
-const sleep = require('sleep');
-const profiler = require('./db').profiler
-const logsTime = 295
+const express = require('express');
+const app = express();
+const finder=require('./finder')
 
-let devicesList = []
+const whoIsOnline=require('./whoIsOnline').whoIsOnline
 
+const port = process.env.PORT || 3001;
 
-// Main function
-function main() {
+app.listen(port);
 
 
-  console.log('starting')
-
-  // Find all local network devices.
-    find().then(devices => {
-
-    // Adding the devices info to obj
-    for (i in devices) {
-
-      devicesList.push({ mac: devices[i].mac, vendor: ((oui(devices[i].mac)).split('\n')[0]), logs: [{ timestamp: new Date().getTime(), ip: devices[i].ip }] })
-
-    }
-
-    console.log("Conncted devices : " + devicesList.length)
-
-    profiler(devicesList)
-    console.log("sleep time = " + logsTime);
-    sleep.sleep(logsTime)
-
-    console.log('running agine ...')
-    devicesList = []
-    main()
-
-  }).catch((err) => {
-
-    console.log(err)
-  })
+finder.main()
 
 
-}
-main();
 
 
+//console.log(whoIsOnline);
+
+
+app.get('/', (req, res) => {
+  res.send('Hello fam'+finder);
+});
+
+app.get('/finder/',(req,res)=>{
+  res.send(JSON.stringify({finderStatus:finder.status}))
+})
+
+
+app.get('/whoIsOnline',(req,res)=>{
+
+
+
+
+whoIsOnline().then((report)=>{
+res.send(report)})
+
+
+
+})
+
+
+
+
+
+
+
+console.log(`listing on port .... ${port}`);
+
+module.exports = app;

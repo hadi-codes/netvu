@@ -54,7 +54,7 @@ function deviceProfiler(device) {
 
 
                     db.close()
-                    console.log('closing db')
+                 //   console.log('closing db')
 
                 })
 
