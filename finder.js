@@ -1,13 +1,16 @@
-const find = require('local-devices');
+const find = require('./finderV2').find;
 const oui = require('oui');
 const profiler = require('./db').profiler
 const logsTime = 295 * 1000
 var status=false
+var lastPing={}
+module.exports.lastPing=lastPing
 module.exports.status=status
 // Main function
 function main() {
     status=true
     let devicesList = []
+    let shortList=[]
    // console.log('starting')
 
     // Find all local network devices.
@@ -16,12 +19,14 @@ function main() {
         // Adding the devices info to obj
         for (i in devices) {
 
-            devicesList.push({ mac: devices[i].mac, vendor: ((oui(devices[i].mac)).split('\n')[0]), logs: [{ timestamp: new Date().getTime(), ip: devices[i].ip }] })
-
+            devicesList.push({ mac: devices[i].mac, vendor: devices[i].vendor, logs: [{ timestamp: new Date().getTime(), ip: devices[i].ip }] })
+            shortList.push({ ip:devices[i].ip,mac: devices[i].mac, vendor: devices[i].vendor})
+        
         }
-
+        
         //console.log("Conncted devices : " + devicesList.length)
-
+        lastPing={timestamp:new Date().getTime(),devices:shortList}
+        module.exports.lastPing=lastPing
         profiler(devicesList)
       //  console.log("sleep time = " + logsTime / 1000);
 
