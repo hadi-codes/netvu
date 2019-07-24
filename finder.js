@@ -1,7 +1,8 @@
 const find = require('./finderV2').find;
 const oui = require('oui');
+const pushToDB=require('./db').pushToDB
 const profiler = require('./db').profiler
-const logsTime = 295 * 1000
+const logsTime = 29 * 1000
 var status=false
 var lastPing={}
 module.exports.lastPing=lastPing
@@ -26,8 +27,10 @@ function main() {
         
         //console.log("Conncted devices : " + devicesList.length)
         lastPing={timestamp:new Date().getTime(),devices:shortList}
+    //   
         module.exports.lastPing=lastPing
         profiler(devicesList)
+        pushToDB(lastPing)
       //  console.log("sleep time = " + logsTime / 1000);
 
 
