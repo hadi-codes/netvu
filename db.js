@@ -1,6 +1,5 @@
 const moment = require('moment')
 const ObjectId = require('mongodb').ObjectId
-//const lastping=require('./finder').lastPing
 moment.locale('de')
 moment().format('L');
 
@@ -9,35 +8,72 @@ const url = "mongodb+srv://boi:boiboi123@cluster0-5rtck.mongodb.net/myuserdb?ret
 const MongoClient = require('mongodb').MongoClient.connect(url, { useNewUrlParser: true })
 
 function profiler(deviceList) {
-return new Promise(async(resolve,reject)=>{
-    
-/// shit to do herre    sfdoihghfsidgoipusgsdfdgjdifhgkdjfhg
-    deviceList.forEach(async(i) => {
+
+    deviceList.forEach((i) => {
         deviceProfiler(i)
-     //   console.log('object');
+
     })
-console.log('done');
-    resolve()
-
-})
-
-   
-
+    console.log('done');
 
 }
 
 
-function pushToDB(lastPing){
-
-MongoClient.then((db)=>{
-db.db('nLogs').collection('lastPing').updateOne({_id:new ObjectId('5d38e4d81c9d440000e906f8')},{$set:{lastPing:lastPing}}).then(()=>{
-    console.log('done insert lastping');
-    db.close()
-})
-})
+function pushToDB(lastPing) {
+  
+    MongoClient.then((db) => {
+        db.db('nLogs').collection('lastPing').updateOne({ _id: new ObjectId('5d38e4d81c9d440000e906f8') }, { $set: { lastPing: lastPing } }).then(() => {
+            console.log('done insert lastping');
+        })
+    })
 
 }
-module.exports.pushToDB=pushToDB
+
+
+
+
+function lastPingProfiler(nlastPing) {
+
+    return new Promise((resolve, reject) => {
+
+
+        let lastPing = { timestamp: nlastPing.timestamp, devices: [] }
+        MongoClient.then((db) => {
+
+            nlastPing.devices.forEach((i) => {
+                lastPing.devices.push(db.db('nLogs').collection('profiles').findOne({ mac: `${i.mac}` }))
+
+            })
+
+            Promise.all(lastPing.devices).then((docs) => {
+
+                let deviceList = []
+                let lastPing
+                docs.forEach((i) => {
+
+                    deviceList.push({ name: i.name, ip: i.logs[i.logs.length - 1].ip, mac: i.mac, vendor: i.vendor });
+                    lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
+
+                })
+
+              
+                pushToDB(lastPing)
+                resolve(lastPing)
+                
+
+            })
+
+
+
+        }).catch((err) => {
+            console.log(err);
+        })
+
+
+
+    })
+
+}
+module.exports.lastPingProfiler = lastPingProfiler
 
 function deviceProfiler(device) {
 
@@ -49,21 +85,21 @@ function deviceProfiler(device) {
 
     MongoClient.then((db) => {
         // checking if profile already exists
-      //  console.log('sss');
-    
+        //  console.log('sss');
+
         db.db('nLogs').collection('profiles').findOne({ mac: `${device.mac}` }).then((doc) => {
 
 
             // if already exists =>  just log that the shit
             if (doc != null) {
-                  // console.log(doc);
+                // console.log(doc);
 
 
 
-                db.db('nLogs').collection('profiles').updateMany({ mac: `${device.mac}` },{ $push: { logs: { timestamp: device.logs[0].timestamp, ip: device.logs[0].ip } } }, {$set:{lastSeen:new Date().getTime()}}).then(() => {
-                console.log('update a doc');
-                    db.close();
-                
+                db.db('nLogs').collection('profiles').updateMany({ mac: `${device.mac}` }, { $push: { logs: { timestamp: device.logs[0].timestamp, ip: device.logs[0].ip } } }, { $set: { lastSeen: new Date().getTime() } }).then(() => {
+                    //  console.log('update a doc');
+                    //    db.close();
+
                 })
 
                     .catch((err) => {
@@ -79,11 +115,11 @@ function deviceProfiler(device) {
                 console.log('doc not found');
                 device.firstSeen = new Date().getTime()
                 device.name = ""
-                device.lastSeen=new Date().getTime()
+                device.lastSeen = new Date().getTime()
                 db.db('nLogs').collection('profiles').insertOne(device).then(() => {
 
-                   
-                    db.close();
+
+                    // db.close();
                     //   console.log('closing db')
 
                 })
