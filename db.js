@@ -50,7 +50,7 @@ function lastPingProfiler(nlastPing) {
                 let lastPing
                 docs.forEach((i) => {
 
-                    deviceList.push({ Name: i.name, Ip: i.logs[i.logs.length - 1].ip, Mac: i.mac, Vendor: i.vendor,isActive:true });
+                    deviceList.push({ Name: i.name, Ip: i.logs[i.logs.length - 1].ip, Mac: i.mac, Vendor: i.vendor,Status:true });
                     lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
 
                 })

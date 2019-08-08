@@ -3,9 +3,9 @@ const express = require('express');
 const app = express();
 const finder = require('./finder')
 const path = require('path');
-const whoIsOnline = require('./whoIsOnline').whoIsOnline
+
 app.use(express.static('public'));
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002;
 const info = require('./info').info
 app.listen(port);
 
@@ -25,18 +25,6 @@ app.get('/', (req, res) => {
 
 
 
-app.get('/whoIsOnline', (req, res) => {
-
-
-
-
-  whoIsOnline().then((report) => {
-    res.send(report)
-  })
-
-
-
-})
 
 
 app.get('/lastping', (req, res) => {
