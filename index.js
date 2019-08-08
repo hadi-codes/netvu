@@ -22,9 +22,7 @@ app.get('/', (req, res) => {
   res.send('Hello fam');
 });
 
-app.get('/finder/', (req, res) => {
-  res.send(JSON.stringify({ finderStatus: finder.status }))
-})
+
 
 
 app.get('/whoIsOnline', (req, res) => {
