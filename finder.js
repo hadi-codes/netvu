@@ -2,7 +2,8 @@ const sudo = require('sudo');
 const ifaces=require('./config.json').iface
 const oui = require('oui');
 const profiler = require('./db').profiler
-const lastPingProfiler=require('./db').lastPingProfiler
+//const lastPingProfiler=require('./db').lastPingProfiler
+const logger=require('./db').logger
 const logsTime = require('./config.json').sleepTime * 1000
 
 var lastPing={}
@@ -30,8 +31,8 @@ function main() {
         lastPing={timestamp:new Date().getTime(),devices:shortList}
     //   
         module.exports.lastPing=lastPing
-        profiler(devicesList)
-        lastPingProfiler(lastPing)
+        profiler(shortList)
+      //  lastPingProfiler(lastPing)
      
       //  console.log("sleep time = " + logsTime / 1000);
 
@@ -80,23 +81,23 @@ let devicesList=[]
     })
     
     Promise.all(promises)
-        .then((result) => {
-           
-        
-            for (i in result){
-                net[ifaces[i]]=result[i]
+        .then((arpRes) => {
+                  
+            for (i in arpRes.devices){
+                net[ifaces[i]]=arpRes[i]
             }
             for(i in ifaces){
    
                 for (x in net[ifaces[i]]){
                   devicesList.push(net[ifaces[i]][x])
                 }
-                // console.log(devices);
                   }
+                  delete arpRes.devices
+                  
             resolve(devicesList)
-
+           // console.log(arpRes);
+            logger(arpRes[0])
         })
-
 
 
 
@@ -111,8 +112,8 @@ let devicesList=[]
 function arp(options) {
 
     return new Promise((resolve, reject) => {
-
-        
+        let logs=[]
+        let arpRes={}
         const IP_INDEX = 0;
         const MAC_ADDRESS_INDEX = 1;
 
@@ -161,11 +162,14 @@ function arp(options) {
                     device.mac = cells[MAC_ADDRESS_INDEX];
                   device.vendor=((oui(device.mac)).split('\n')[0])
                 }
-
+                logs.push({ip:device.ip,mac:device.mac})
                 devices.push(device);
             }
-
-            resolve(devices)
+            arpRes.timestamp=new Date().getTime()
+            arpRes.devicesLogs=logs
+            arpRes.devices=devices
+           // console.log(arpRes);
+            resolve(arpRes)
 
         });
         

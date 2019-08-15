@@ -18,62 +18,7 @@ function profiler(deviceList) {
 }
 
 
-function pushToDB(lastPing) {
-  
-    MongoClient.then((db) => {
-        db.db('nLogs').collection('lastPing').updateOne({ _id: new ObjectId('5d38e4d81c9d440000e906f8') }, { $set: { lastPing: lastPing } }).then(() => {
-            console.log('done insert lastping');
-        })
-    })
 
-}
-
-
-
-
-function lastPingProfiler(nlastPing) {
-
-    return new Promise((resolve, reject) => {
-
-
-        let lastPing = { timestamp: nlastPing.timestamp, devices: [] }
-        MongoClient.then((db) => {
-
-            nlastPing.devices.forEach((i) => {
-                lastPing.devices.push(db.db('nLogs').collection('profiles').findOne({ mac: `${i.mac}` }))
-
-            })
-
-            Promise.all(lastPing.devices).then((docs) => {
-
-                let deviceList = []
-                let lastPing
-                docs.forEach((i) => {
-
-                    deviceList.push({ Name: i.name, Ip: i.logs[i.logs.length - 1].ip, Mac: i.mac, Vendor: i.vendor,Status:true });
-                    lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
-
-                })
-
-              
-                pushToDB(lastPing)
-                resolve(lastPing)
-                
-
-            })
-
-
-
-        }).catch((err) => {
-            console.log(err);
-        })
-
-
-
-    })
-
-}
-module.exports.lastPingProfiler = lastPingProfiler
 
 function deviceProfiler(device) {
 
@@ -96,16 +41,14 @@ function deviceProfiler(device) {
 
 
 
-                db.db('nLogs').collection('profiles').updateMany({ mac: `${device.mac}` }, { $push: { logs: { timestamp: device.logs[0].timestamp, ip: device.logs[0].ip } } }, { $set: { lastSeen: new Date().getTime() } }).then(() => {
+                db.db('nLogs').collection('profiles').updateOne({ mac: `${device.mac}` }, { $set: { lastSeen: new Date().getTime() } }).then(() => {
                     //  console.log('update a doc');
                     //    db.close();
 
                 })
-
                     .catch((err) => {
                         console.log(err)
                     })
-
 
 
 
@@ -161,3 +104,146 @@ function deviceProfiler(device) {
 
 
 module.exports.profiler = profiler;
+
+
+
+function logger(arpRes) {
+    delete arpRes.devices
+    let date={timestamp:arpRes.timestamp,device:arpRes.devicesLogs}
+    console.log(arpRes);
+    return new Promise((resolve, reject) => {
+        let date = moment().format('DD-MM-YYYY')
+
+        MongoClient.then((db) => {
+            // checking if profile already exists
+            //  console.log('sss');
+
+            db.db('nLogs').collection('logs').findOne({ date: date }).then((doc) => {
+
+
+                // if already exists =>  just log that the shit
+                if (doc != null) {
+                    // console.log(doc);
+
+
+
+                    db.db('nLogs').collection('logs').updateOne({ date: date }, { $push: { logs: arpRes } }).then(() => {
+                        //  console.log('update a doc');
+                        //    db.close();
+
+                    })
+                        .catch((err) => {
+                            console.log(err)
+                        })
+
+
+
+                }
+                // if the profile not found => create new profile and add first seen
+                else {
+
+                    db.db('nLogs').collection('logs').insertOne({ date: date, logs: [arpRes]  }).then(() => {
+
+
+                        // db.close();
+                        //   console.log('closing db')
+
+                    })
+
+                        // err handler for inserting 
+                        .catch((err) => {
+                            console.log(err)
+                        })
+
+
+                }
+            })
+
+
+
+                //err handler for query
+
+                .catch((err) => {
+                    console.log(err)
+                })
+
+            /*
+                  */
+
+
+
+        }) // MC error Handler
+            .catch((err) => {
+
+
+                console.log(err)
+            })
+    })
+}
+module.exports.logger = logger
+
+
+/*
+useless shit ?
+
+
+
+function pushToDB(lastPing) {
+
+    MongoClient.then((db) => {
+        db.db('nLogs').collection('lastPing').updateOne({ _id: new ObjectId('5d38e4d81c9d440000e906f8') }, { $set: { lastPing: lastPing } }).then(() => {
+            console.log('done insert lastping');
+        })
+    })
+
+}
+
+
+
+
+function lastPingProfiler(nlastPing) {
+
+    return new Promise((resolve, reject) => {
+
+
+        let lastPing = { timestamp: nlastPing.timestamp, devices: [] }
+        MongoClient.then((db) => {
+
+            nlastPing.devices.forEach((i) => {
+                lastPing.devices.push(db.db('nLogs').collection('profiles').findOne({ mac: `${i.mac}` }))
+
+            })
+
+            Promise.all(lastPing.devices).then((docs) => {
+
+                let deviceList = []
+                let lastPing
+                docs.forEach((i) => {
+
+                    deviceList.push({ Name: i.name, Ip: i.logs[i.logs.length - 1].ip, Mac: i.mac, Vendor: i.vendor, Status: true });
+                    lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
+
+                })
+
+
+                pushToDB(lastPing)
+                resolve(lastPing)
+
+
+            })
+
+
+
+        }).catch((err) => {
+            console.log(err);
+        })
+
+
+
+    })
+
+}
+module.exports.lastPingProfiler = lastPingProfiler
+
+
+*/
