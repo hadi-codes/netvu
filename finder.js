@@ -1,40 +1,41 @@
 const sudo = require('sudo');
-const ifaces=require('./config.json').iface
+const ifaces = require('./config.json').iface
+
 const oui = require('oui');
 const profiler = require('./db').profiler
-//const lastPingProfiler=require('./db').lastPingProfiler
-const logger=require('./db').logger
+const lastPingProfiler=require('./db').lastPingProfiler
+const logger = require('./db').logger
 const logsTime = require('./config.json').sleepTime * 1000
 
-var lastPing={}
-module.exports.lastPing=lastPing
+var lastPing = {}
+module.exports.lastPing = lastPing
 
 // Main function
 function main() {
 
     let devicesList = []
-    let shortList=[]
-   // console.log('starting')
+    let shortList = []
+    // console.log('starting')
 
     // Find all local network devices.
-    find().then(devices => {
+    find().then(pingResulte => {
+    //    console.log(pingResulte.devicesList);
+        // Adding the pingResulte.devicesList info to obj
+        for (i in pingResulte.devicesList) {
 
-        // Adding the devices info to obj
-        for (i in devices) {
+            devicesList.push({ mac: pingResulte.devicesList[i].mac, vendor: pingResulte.devicesList[i].vendor, logs: [{ timestamp: new Date().getTime(), ip: pingResulte.devicesList[i].ip }] })
+            shortList.push({ ip: pingResulte.devicesList[i].ip, mac: pingResulte.devicesList[i].mac, vendor: pingResulte.devicesList[i].vendor,lastSeen:pingResulte.timestamp })
 
-            devicesList.push({ mac: devices[i].mac, vendor: devices[i].vendor, logs: [{ timestamp: new Date().getTime(), ip: devices[i].ip }] })
-            shortList.push({ ip:devices[i].ip,mac: devices[i].mac, vendor: devices[i].vendor})
-        
         }
-        
-        //console.log("Conncted devices : " + devicesList.length)
-        lastPing={timestamp:new Date().getTime(),devices:shortList}
-    //   
-        module.exports.lastPing=lastPing
+
+        //console.log("Conncted pingResulte.devicesList : " + devicesList.length)
+        lastPing = { timestamp: pingResulte.timestamp, devices: shortList }
+        //   
+        module.exports.lastPing = lastPing
         profiler(shortList)
-      //  lastPingProfiler(lastPing)
-     
-      //  console.log("sleep time = " + logsTime / 1000);
+          lastPingProfiler(lastPing)
+
+        //  console.log("sleep time = " + logsTime / 1000);
 
 
         const sleep = () => {
@@ -48,56 +49,74 @@ function main() {
                 }, logsTime)
             })
         }
-        status=true
+        status = true
         devicesList = []
         sleep().then(() => {
-         //   console.log('running agine ...')
+            //   console.log('running agine ...')
             main()
-        }).catch((err)=>{
-      
+        }).catch((err) => {
+
         })
 
     }).catch((err) => {
-       
+
         console.log(err)
     })
-    
 
-    
+
+
 }
 
-function find(){
-    return new Promise((resolve,reject)=>{
-        
-    
-  
-let net={}
-let devicesList=[]
+function find() {
+    return new Promise((resolve, reject) => {
 
 
-    let promises = []
-    ifaces.forEach((id) => {
-        promises.push(arp( { arguments: ["-I", `${id}`] }))
-    })
-    
-    Promise.all(promises)
-        .then((arpRes) => {
-                  
-            for (i in arpRes.devices){
-                net[ifaces[i]]=arpRes[i]
-            }
-            for(i in ifaces){
-   
-                for (x in net[ifaces[i]]){
-                  devicesList.push(net[ifaces[i]][x])
-                }
-                  }
-                  delete arpRes.devices
-                  
-            resolve(devicesList)
-           // console.log(arpRes);
-            logger(arpRes[0])
+
+        let net = {}
+        let devicesList = []
+        let logs = {}
+
+
+        let promises = []
+        ifaces.forEach((id) => {
+
+            promises.push(arp({ arguments: ["-I", `${id}`] }))
         })
+
+        Promise.all(promises)
+            .then((arpRes) => {
+                // here where arp respone get sorted 
+                // because sometimes the user have more than interface
+                //have to return logs array 
+                // and device list with timestamp
+                logs.timestamp = (arpRes[0].timestamp)
+                logs.devicesLogs=[]
+                logs.cache={}
+                for (i in arpRes) {
+
+                    net[ifaces[i]] = arpRes[i].devices
+                    logs.cache[ifaces[i]]=arpRes[i].devicesLogs
+
+                }
+
+
+                for (i in ifaces) {
+
+                    for (x in net[ifaces[i]]) {
+                        devicesList.push(net[ifaces[i]][x])
+                      
+                    }
+                    for(b in logs.cache[ifaces[i]]){
+                        logs.devicesLogs.push(logs.cache[ifaces[i]][b])
+                    }
+             
+                }
+                delete logs.cache
+              
+                resolve({timestamp:arpRes[0].timestamp,devicesList:devicesList})
+             
+                logger(logs)
+            })
 
 
 
@@ -112,12 +131,12 @@ let devicesList=[]
 function arp(options) {
 
     return new Promise((resolve, reject) => {
-        let logs=[]
-        let arpRes={}
+        let logs = []
+        let arpRes = {}
         const IP_INDEX = 0;
         const MAC_ADDRESS_INDEX = 1;
 
-     //   console.log('Start scanning network');
+        //   console.log('Start scanning network');
 
         let commandArguments = ['-l', '-q'];
         if (options && options.arguments) {
@@ -140,7 +159,7 @@ function arp(options) {
 
 
         arpCommand.on('close', code => {
-        //    console.log('Scan finished');
+            //    console.log('Scan finished');
 
             if (code !== 0) {
                 console.log('Error: ' + code + ' : ' + errorStream);
@@ -160,19 +179,19 @@ function arp(options) {
 
                 if (cells[MAC_ADDRESS_INDEX]) {
                     device.mac = cells[MAC_ADDRESS_INDEX];
-                  device.vendor=((oui(device.mac)).split('\n')[0])
+                    device.vendor = ((oui(device.mac)).split('\n')[0])
                 }
-                logs.push({ip:device.ip,mac:device.mac})
+                logs.push({ ip: device.ip, mac: device.mac })
                 devices.push(device);
             }
-            arpRes.timestamp=new Date().getTime()
-            arpRes.devicesLogs=logs
-            arpRes.devices=devices
-           // console.log(arpRes);
+            arpRes.timestamp = new Date().getTime()
+            arpRes.devicesLogs = logs
+            arpRes.devices = devices
+            // console.log(arpRes);
             resolve(arpRes)
 
         });
-        
+
     })
 }
 

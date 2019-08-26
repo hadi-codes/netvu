@@ -23,8 +23,10 @@ let file = editJsonFile(`config.json`,{
 
             resolve(ifaces)
             file.set("iface",ifaces)
-            //console.log(ifaces);
+            console.log(ifaces);
            
         })
     })
 }
+
+iface()
