@@ -2,7 +2,7 @@ const moment = require('moment')
 const ObjectId = require('mongodb').ObjectId
 moment.locale('de')
 moment().format('L');
-const collection={name:"nLog3",logs:"logs",profiles:"profiles"}
+const collection = { name: "nLog3", logs: "logs", profiles: "profiles" }
 
 const url = "mongodb+srv://boi:boiboi123@cluster0-5rtck.mongodb.net/myuserdb?retryWrites=true";
 
@@ -12,7 +12,7 @@ function profiler(deviceList) {
 
     deviceList.forEach((i) => {
         deviceProfiler(i)
-      
+
 
     })
     console.log('done');
@@ -43,7 +43,7 @@ function deviceProfiler(device) {
 
 
 
-                db.db(collection.name).collection(collection.profiles).updateMany({ mac: `${device.mac}` }, { $set: { lastSeen:device.lastSeen,ip:device.ip } }).then(() => {
+                db.db(collection.name).collection(collection.profiles).updateMany({ mac: `${device.mac}` }, { $set: { lastSeen: device.lastSeen, ip: device.ip } }).then(() => {
                     //  console.log('update a doc');
                     //    db.close();
 
@@ -183,7 +183,7 @@ module.exports.logger = logger
 function pushToDB(lastPing) {
 
     MongoClient.then((db) => {
-        db.db(collection.name).collection('lastPing').updateOne({ lable:'lastPing'}, { $set: { lastPing: lastPing } }).then(() => {
+        db.db(collection.name).collection('lastPing').updateOne({ lable: 'lastPing' }, { $set: { lastPing: lastPing } }).then(() => {
             console.log('done insert lastping');
         })
     })
@@ -208,20 +208,25 @@ function lastPingProfiler(nlastPing) {
 
             Promise.all(lastPing.devices).then((docs) => {
 
-                let deviceList = []
-                let lastPing
-                docs.forEach((i) => {
-                    console.log(i);
-                    deviceList.push({ name: i.name, ip: i.ip, mac: i.mac, vendor: i.vendor, status: true });
-                    lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
+                if (docs != null) {
+                    let deviceList = []
+                    let lastPing
+                    docs.forEach((i) => {
+                        console.log(i);
+                        deviceList.push({ name: i.name, ip: i.ip, mac: i.mac, vendor: i.vendor, status: true });
+                        lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
 
-                })
-
-
-                pushToDB(lastPing)
-                resolve(lastPing)
+                    })
+ 
 
 
+                    pushToDB(lastPing)
+                    resolve(lastPing)
+
+                } else {
+                    console.log('no devices');
+                    reject()
+                }
             })
 
 

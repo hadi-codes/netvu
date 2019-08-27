@@ -1,9 +1,9 @@
 const sudo = require('sudo');
-const ifaces = require('./config.json').iface
-
+let ifaces = require('./config.json').iface
+const interfaceChecker = require('./iface').iface
 const oui = require('oui');
 const profiler = require('./db').profiler
-const lastPingProfiler=require('./db').lastPingProfiler
+const lastPingProfiler = require('./db').lastPingProfiler
 const logger = require('./db').logger
 const logsTime = require('./config.json').sleepTime * 1000
 
@@ -19,12 +19,12 @@ function main() {
 
     // Find all local network devices.
     find().then(pingResulte => {
-    //    console.log(pingResulte.devicesList);
+        //    console.log(pingResulte.devicesList);
         // Adding the pingResulte.devicesList info to obj
         for (i in pingResulte.devicesList) {
 
             devicesList.push({ mac: pingResulte.devicesList[i].mac, vendor: pingResulte.devicesList[i].vendor, logs: [{ timestamp: new Date().getTime(), ip: pingResulte.devicesList[i].ip }] })
-            shortList.push({ ip: pingResulte.devicesList[i].ip, mac: pingResulte.devicesList[i].mac, vendor: pingResulte.devicesList[i].vendor,lastSeen:pingResulte.timestamp })
+            shortList.push({ ip: pingResulte.devicesList[i].ip, mac: pingResulte.devicesList[i].mac, vendor: pingResulte.devicesList[i].vendor, lastSeen: pingResulte.timestamp })
 
         }
 
@@ -33,7 +33,7 @@ function main() {
         //   
         module.exports.lastPing = lastPing
         profiler(shortList)
-          lastPingProfiler(lastPing)
+        lastPingProfiler(lastPing)
 
         //  console.log("sleep time = " + logsTime / 1000);
 
@@ -61,6 +61,8 @@ function main() {
     }).catch((err) => {
 
         console.log(err)
+        interfaceChecker().then((iface) => { if (iface != null) { main() } })
+
     })
 
 
@@ -80,7 +82,9 @@ function find() {
         let promises = []
         ifaces.forEach((id) => {
 
-            promises.push(arp({ arguments: ["-I", `${id}`] }))
+            promises.push(arp({ arguments: ["-I", `${id}`] }).catch((err) => {
+                reject("interface not found")
+            }))
         })
 
         Promise.all(promises)
@@ -90,12 +94,12 @@ function find() {
                 //have to return logs array 
                 // and device list with timestamp
                 logs.timestamp = (arpRes[0].timestamp)
-                logs.devicesLogs=[]
-                logs.cache={}
+                logs.devicesLogs = []
+                logs.cache = {}
                 for (i in arpRes) {
 
                     net[ifaces[i]] = arpRes[i].devices
-                    logs.cache[ifaces[i]]=arpRes[i].devicesLogs
+                    logs.cache[ifaces[i]] = arpRes[i].devicesLogs
 
                 }
 
@@ -104,17 +108,17 @@ function find() {
 
                     for (x in net[ifaces[i]]) {
                         devicesList.push(net[ifaces[i]][x])
-                      
+
                     }
-                    for(b in logs.cache[ifaces[i]]){
+                    for (b in logs.cache[ifaces[i]]) {
                         logs.devicesLogs.push(logs.cache[ifaces[i]][b])
                     }
-             
+
                 }
                 delete logs.cache
-              
-                resolve({timestamp:arpRes[0].timestamp,devicesList:devicesList})
-             
+
+                resolve({ timestamp: arpRes[0].timestamp, devicesList: devicesList })
+
                 logger(logs)
             })
 
@@ -151,10 +155,12 @@ function arp(options) {
 
         arpCommand.stdout.on('data', data => {
             bufferStream += data;
+
         });
 
         arpCommand.stderr.on('data', error => {
             errorStream += error;
+            reject('interface not found')
         });
 
 
