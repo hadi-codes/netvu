@@ -1,9 +1,7 @@
-const moment = require('moment')
 const express = require('express');
 const app = express();
 const finder = require('./finder')
-const path = require('path');
-
+const getLastPing=require('./db').getLastping
 app.use(express.static('public'));
 const port = process.env.PORT || 3002;
 const info = require('./info').info
@@ -18,14 +16,24 @@ finder.main()
 //console.log(whoIsOnline);
 
 
-app.get('/', (req, res) => {
-  res.send('Hello fam');
+app.get('/', function(req, res){
+  res.sendfile(__dirname + '/public/index.html');
 });
 
 
 
 
 
+
+app.get('/lp',(req,res)=>{
+    
+  getLastPing().then((lp)=>{
+   // console.log(lp);
+      res.header("Access-Control-Allow-Origin", "*");
+      res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+      res.send(lp)
+  })
+  })
 
 app.get('/lastping', (req, res) => {
   let lastPingProfiler = require('./db').lastPingProfiler

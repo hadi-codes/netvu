@@ -3,9 +3,7 @@ const ObjectId = require('mongodb').ObjectId
 moment.locale('de')
 moment().format('L');
 const collection = { name: "nLog3", logs: "logs", profiles: "profiles" }
-
-const url = "mongodb+srv://boi:boiboi123@cluster0-5rtck.mongodb.net/myuserdb?retryWrites=true";
-
+const url = require('./config.json').mongoUrl
 const MongoClient = require('mongodb').MongoClient.connect(url, { useNewUrlParser: true })
 
 function profiler(deviceList) {
@@ -87,9 +85,7 @@ function deviceProfiler(device) {
                 console.log(err)
             })
 
-        /*
-              */
-
+   
 
 
     }) // MC error Handler
@@ -243,3 +239,75 @@ function lastPingProfiler(nlastPing) {
 module.exports.lastPingProfiler = lastPingProfiler
 
 
+
+
+
+
+
+// last ping 
+// for the web clinet 
+
+
+
+function getLastping() {
+    let list = [];
+    let activeList = []
+    let profiles = []
+    let timestamp = '';
+    let devices=[]
+    return new Promise((resolve, reject) => {
+        MongoClient.then((db) => {
+            db.db('nLog3').collection('profiles').find().toArray().then((doc) => {
+
+                for (i in doc) {
+                    delete doc[i]._id
+                    delete doc[i].firstSeen
+                    delete doc[i].lastSeen
+                    doc[i].status = false
+                    profiles.push(doc[i])
+                }
+
+
+            }).then(() => {
+
+                db.db('nLog3').collection('lastPing').find().toArray().then((doc) => {
+                    timestamp = doc[0].lastPing.time
+                    console.log(timestamp);
+                    activeList = doc[0].lastPing.devices
+                    for (i in activeList) {
+                        for (x in profiles) {
+                            if (profiles[x].mac === activeList[i].mac) {
+                                list.push(x);
+                                console.log(x);
+                                list.sort(function (a, b) { return b - a })
+
+                            } 
+                        }
+
+                    }
+
+                    for (k in list) {
+                        profiles.splice(list[k], 1)
+                    }
+                    for (l in activeList) {
+                        profiles.push(activeList[l])
+                    }
+
+                    for (d in profiles) {
+                        const sorted = {};
+                        Object.keys(profiles[d]).sort().forEach(function (key) {
+                            sorted[key] = profiles[d][key];
+                        });
+                        devices.push(sorted)
+                    }
+                    resolve({ timestamp: timestamp, devices: devices });
+
+
+
+                })
+            })
+
+        })
+    })
+}
+module.exports.getLastping = getLastping

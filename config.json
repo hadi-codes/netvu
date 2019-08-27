@@ -2,5 +2,6 @@
   "iface": [
     "wlp2s0"
   ],
-  "sleepTime": 20
+  "sleepTime": 20,
+  "mongoUrl":"mongodb+srv://boi:boiboi123@cluster0-5rtck.mongodb.net/myuserdb?retryWrites=true"
 }
