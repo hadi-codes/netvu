@@ -4,7 +4,7 @@ moment.locale('de')
 moment().format('L');
 const collection = { name: "nLog3", logs: "logs", profiles: "profiles" }
 const url = require('./config.json').mongoUrl
-const MongoClient = require('mongodb').MongoClient.connect(url, { useNewUrlParser: true })
+const MongoClient = require('mongodb').MongoClient.connect(url, { useNewUrlParser: true,useUnifiedTopology: true })
 
 function profiler(deviceList) {
 
@@ -208,7 +208,7 @@ function lastPingProfiler(nlastPing) {
                     let deviceList = []
                     let lastPing
                     docs.forEach((i) => {
-                        console.log(i);
+                       // console.log(i);
                         deviceList.push({ name: i.name, ip: i.ip, mac: i.mac, vendor: i.vendor, status: true });
                         lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
 
