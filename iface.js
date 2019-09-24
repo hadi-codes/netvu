@@ -1,15 +1,13 @@
 
 // Getting the networkInterfaces and save it in to config file
+const si = require('systeminformation')
+const editJsonFile = require("edit-json-file");
 
+let file = editJsonFile(`config.json`, {
+    autosave: true
+});
 
 function iface() {
-
-    const si = require('systeminformation')
-    const editJsonFile = require("edit-json-file");
-
-    let file = editJsonFile(`config.json`, {
-        autosave: true
-    });
 
     return new Promise((resolve, reject) => {
         let ifaces = []
@@ -24,7 +22,7 @@ function iface() {
 
             resolve(ifaces)
             file.set("iface", ifaces)
-            console.log(ifaces);
+           // console.log(ifaces);
 
         })
     })

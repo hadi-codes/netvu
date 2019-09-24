@@ -1,10 +1,15 @@
+
+const config = require('./config.json')
+const collection = config.collectionDetails
+
+const url=config.mongoUrl
+const MongoClient = require('mongodb').MongoClient.connect(url, { useNewUrlParser: true,useUnifiedTopology: true })
+
 const moment = require('moment')
-const ObjectId = require('mongodb').ObjectId
 moment.locale('de')
 moment().format('L');
-const collection = { name: "nLog3", logs: "logs", profiles: "profiles" }
-const url = require('./config.json').mongoUrl
-const MongoClient = require('mongodb').MongoClient.connect(url, { useNewUrlParser: true,useUnifiedTopology: true })
+
+
 
 function profiler(deviceList) {
 
@@ -32,7 +37,7 @@ function deviceProfiler(device) {
         // checking if profile already exists
         //  console.log('sss');
 
-        db.db(collection.name).collection(collection.profiles).findOne({ mac: `${device.mac}` }).then((doc) => {
+        db.db(collection.db).collection(collection.profiles).findOne({ mac: `${device.mac}` }).then((doc) => {
 
 
             // if already exists =>  just log that the shit
@@ -41,7 +46,7 @@ function deviceProfiler(device) {
 
 
 
-                db.db(collection.name).collection(collection.profiles).updateMany({ mac: `${device.mac}` }, { $set: { lastSeen: device.lastSeen, ip: device.ip } }).then(() => {
+                db.db(collection.db).collection(collection.profiles).updateMany({ mac: `${device.mac}` }, { $set: { lastSeen: device.lastSeen, ip: device.ip } }).then(() => {
                     //  console.log('update a doc');
                     //    db.close();
 
@@ -60,7 +65,7 @@ function deviceProfiler(device) {
                 device.name = ""
                 device.lastSeen = device.lastSeen
 
-                db.db(collection.name).collection(collection.profiles).insertOne(device).then(() => {
+                db.db(collection.db).collection(collection.profiles).insertOne(device).then(() => {
 
 
                     // db.close();
@@ -117,7 +122,7 @@ function logger(arpRes) {
             // checking if profile already exists
             //  console.log('sss');
 
-            db.db(collection.name).collection(collection.logs).findOne({ date: date }).then((doc) => {
+            db.db(collection.db).collection(collection.logs).findOne({ date: date }).then((doc) => {
 
 
                 // if already exists =>  just log that the shit
@@ -126,7 +131,7 @@ function logger(arpRes) {
 
 
 
-                    db.db(collection.name).collection(collection.logs).updateOne({ date: date }, { $push: { logs: arpRes } }).catch((err) => {
+                    db.db(collection.db).collection(collection.logs).updateOne({ date: date }, { $push: { logs: arpRes } }).catch((err) => {
                         console.log(err)
                     })
 
@@ -136,7 +141,7 @@ function logger(arpRes) {
                 // if the profile not found => create new profile and add first seen
                 else {
 
-                    db.db(collection.name).collection(collection.logs).insertOne({ date: date, logs: [arpRes] })
+                    db.db(collection.db).collection(collection.logs).insertOne({ date: date, logs: [arpRes] })
 
                         // err handler for inserting 
                         .catch((err) => {
@@ -179,8 +184,9 @@ module.exports.logger = logger
 function pushToDB(lastPing) {
 
     MongoClient.then((db) => {
-        db.db(collection.name).collection('lastPing').updateOne({ lable: 'lastPing' }, { $set: { lastPing: lastPing } }).then(() => {
+        db.db(collection.db).collection('lastPing').insertOne(lastPing).then(() => {
             console.log('done insert lastping');
+            db.db(collection.db).collection('lastPing').deleteMany( { time : { $ne: lastPing.time } } )
         })
     })
 
@@ -198,17 +204,18 @@ function lastPingProfiler(nlastPing) {
         MongoClient.then((db) => {
 
             nlastPing.devices.forEach((i) => {
-                lastPing.devices.push(db.db(collection.name).collection(collection.profiles).findOne({ mac: `${i.mac}` }))
+                lastPing.devices.push(db.db(collection.db).collection(collection.profiles).findOne({ mac: `${i.mac}` }))
 
             })
 
             Promise.all(lastPing.devices).then((docs) => {
-
+                console.log(docs);
                 if (docs != null) {
                     let deviceList = []
                     let lastPing
                     docs.forEach((i) => {
                        // console.log(i);
+                    
                         deviceList.push({ name: i.name, ip: i.ip, mac: i.mac, vendor: i.vendor, status: true });
                         lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
 
@@ -257,7 +264,7 @@ function getLastping() {
     let devices=[]
     return new Promise((resolve, reject) => {
         MongoClient.then((db) => {
-            db.db('nLog3').collection('profiles').find().toArray().then((doc) => {
+            db.db(collection.db).collection('profiles').find().toArray().then((doc) => {
 
                 for (i in doc) {
                     delete doc[i]._id
@@ -270,10 +277,12 @@ function getLastping() {
 
             }).then(() => {
 
-                db.db('nLog3').collection('lastPing').find().toArray().then((doc) => {
-                    timestamp = doc[0].lastPing.time
+                db.db(collection.db).collection('lastPing').find().toArray().then((doc) => {
+                    doc=doc[doc.length-1]
+                    console.log(doc);
+                    timestamp = doc.time
                     console.log(timestamp);
-                    activeList = doc[0].lastPing.devices
+                    activeList = doc.devices
                     for (i in activeList) {
                         for (x in profiles) {
                             if (profiles[x].mac === activeList[i].mac) {
@@ -311,3 +320,34 @@ function getLastping() {
     })
 }
 module.exports.getLastping = getLastping
+
+
+
+function devicesNumberTime(date) {
+
+    return new Promise((resolve, reject) => {
+        let arr = []
+        MongoClient.then((db) => {
+            db.db('nLog3').collection('logs').findOne({ date: date }).then((doc) => {
+                //  console.log(doc.logs.length)
+
+                if (doc != null) {
+                    for (i in doc.logs) {
+
+                        arr.push([doc.logs[i].timestamp, doc.logs[i].devicesLogs.length])
+
+                    }
+
+                    resolve(arr)
+                } else {
+                    resolve({ msg: 'date not found' })
+                }
+            })
+
+        })
+
+
+    })
+}
+
+module.exports.devicesNumberTime = devicesNumberTime

@@ -1,7 +1,13 @@
 {
   "iface": [
+    "enp1s0",
     "wlp2s0"
   ],
-  "sleepTime": 20,
+  "collectionDetails": {
+    "db": "logV4",
+    "logs": "logs",
+    "profiles": "profiles"
+  },
+  "sleepTime": 50,
   "mongoUrl": "mongodb+srv://boi:boiboi123@cluster0-5rtck.mongodb.net/myuserdb?retryWrites=true"
 }
