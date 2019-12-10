@@ -41,10 +41,10 @@ app.get('/lp', (req, res) => {
 
 app.get('/lastping', (req, res) => {
   let lastPingProfiler = require('./db').lastPingProfiler
-  console.log(finder.lastPing);
+ // console.log(finder.lastPing);
   lastPingProfiler(finder.lastPing).then((d) => {
 
-    console.log(d);
+    //console.log(d);
     res.send(d)
   })
  

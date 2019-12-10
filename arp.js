@@ -57,7 +57,7 @@ function find() {
                     delete logs.cache
 
                     resolve({ timestamp: arpRes[0].timestamp, devicesList: devicesList })
-
+             //   console.log(logs);
                     logger(logs)
                 } else {
                     interfaceChecker()

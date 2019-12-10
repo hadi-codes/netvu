@@ -44,6 +44,7 @@ fetch('http://localhost:3002/lp')
  
     Highcharts.getJSON(
        
+  //  `http://localhost:3002/nt/24-09-2019`,
     `http://localhost:3002/nt/${dayjs().format('DD-MM-YYYY')}`,
     function (data) {
 

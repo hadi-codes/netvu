@@ -123,8 +123,8 @@ function logger(arpRes) {
             //  console.log('sss');
 
             db.db(collection.db).collection(collection.logs).findOne({ date: date }).then((doc) => {
-
-
+              //  console.log(doc);
+                
                 // if already exists =>  just log that the shit
                 if (doc != null) {
                     // console.log(doc);
@@ -209,15 +209,16 @@ function lastPingProfiler(nlastPing) {
             })
 
             Promise.all(lastPing.devices).then((docs) => {
-                console.log(docs);
+              //  console.log(docs);
                 if (docs != null) {
                     let deviceList = []
                     let lastPing
                     docs.forEach((i) => {
                        // console.log(i);
                     
-                        deviceList.push({ name: i.name, ip: i.ip, mac: i.mac, vendor: i.vendor, status: true });
+                       deviceList.push({ name: i.name, ip: i.ip, mac: i.mac, vendor: i.vendor, status: true });
                         lastPing = { time: moment(nlastPing.timestamp).format(), devices: deviceList }
+                //    console.log(lastPing);
 
                     })
  
@@ -328,7 +329,7 @@ function devicesNumberTime(date) {
     return new Promise((resolve, reject) => {
         let arr = []
         MongoClient.then((db) => {
-            db.db('nLog3').collection('logs').findOne({ date: date }).then((doc) => {
+            db.db(collection.db).collection(collection.logs).findOne({ date: date }).then((doc) => {
                 //  console.log(doc.logs.length)
 
                 if (doc != null) {
