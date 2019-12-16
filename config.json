@@ -1,7 +1,7 @@
 {
   "iface": [
-    "enp1s0",
-    "wlp2s0"
+    "eth0",
+    "wlan0"
   ],
   "collectionDetails": {
     "db": "logV5",

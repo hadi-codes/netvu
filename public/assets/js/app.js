@@ -1,4 +1,4 @@
-fetch('http://localhost:3002/lp')
+fetch('http://192.168.0.77:3002/lp')
     .then(function (response) {
         return response.json();
     })
@@ -45,7 +45,7 @@ fetch('http://localhost:3002/lp')
     Highcharts.getJSON(
        
   //  `http://localhost:3002/nt/24-09-2019`,
-    `http://localhost:3002/nt/${dayjs().format('DD-MM-YYYY')}`,
+    `http://192.168.0.77:3002/nt/${dayjs().format('DD-MM-YYYY')}`,
     function (data) {
 
         Highcharts.chart('container', {
