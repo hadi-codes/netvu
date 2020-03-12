@@ -1,4 +1,4 @@
-fetch('http://192.168.0.77:3002/lp')
+fetch('http://192.168.0.16:3002/lp')
     .then(function (response) {
         return response.json();
     })

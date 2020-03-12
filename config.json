@@ -1,13 +1,12 @@
 {
   "iface": [
-    "eth0",
-    "wlan0"
+    "enp3s0"
   ],
   "collectionDetails": {
     "db": "logV5",
     "logs": "logs",
     "profiles": "profiles"
   },
-  "sleepTime": 50,
+  "sleepTime": 15,
   "mongoUrl": "mongodb+srv://boi:boiboi123@cluster0-5rtck.mongodb.net/myuserdb?retryWrites=true"
 }
