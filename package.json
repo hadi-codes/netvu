@@ -15,7 +15,7 @@
     "libnmap": "^0.4.19",
     "local-devices": "^2.0.0",
     "local-network-scanner": "^0.2.0",
-    "moment": "^2.24.0",
+    "moment": "^2.29.4",
     "mongodb": "^3.3.1",
     "oui": "^10.0.18",
     "systeminformation": "^4.14.8"
